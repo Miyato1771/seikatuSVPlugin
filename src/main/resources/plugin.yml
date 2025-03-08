@@ -1,0 +1,27 @@
+name: seikatuSVPlugin
+version: '1.0-SNAPSHOT'
+main: org.mt17.seikatuSVPlugin.SeikatuSVPlugin
+api-version: '1.21'
+dependencies:
+  server:
+    PlaceholderAPI:
+      load: BEFORE #
+      required: false
+commands:
+  seikatuSV:
+    description: seikatuSVPlugin command
+    usage: /<command> [reload]
+    permission: seikatuSVPlugin.command
+    aliases:
+    - svp
+    - seikatu
+    - seikatuSV
+    - seikatuSVPlugin
+  dailyquest:
+    description: quest command
+    usage: /dailyquest progress
+    aliases:
+    - q
+    - quest
+    - seikatuSVQuest
+    - seikatuSVQuestPlugin

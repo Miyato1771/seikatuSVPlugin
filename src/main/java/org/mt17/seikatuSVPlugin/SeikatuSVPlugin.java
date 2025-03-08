@@ -1,0 +1,91 @@
+package org.mt17.seikatuSVPlugin;
+
+import net.milkbowl.vault.economy.Economy;
+import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.plugin.RegisteredServiceProvider;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.mt17.seikatuSVPlugin.dailyQuest.dailyQuest;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public final class SeikatuSVPlugin extends JavaPlugin implements Listener {
+
+    private static Economy economy = null;
+    private FileConfiguration config;
+    private dailyQuest dailyQuestInstance;
+    private final loginBonus loginBonus = new loginBonus();
+
+    @Override
+    public void onEnable() {
+        // config.ymlの読み込み
+        saveDefaultConfig();
+        config = getConfig();
+
+        // Vaultがサーバーにあるか確認
+        if (!setupEconomy()) {
+            getLogger().severe("Vaultがありません! 経済系のものは有効化されません");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
+        // イベント登録
+        getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new dirtShovelShop(), this);
+        getCommand("seikatuSV").setExecutor(new seikatuSVCommand(this));
+
+        // dailyQuestのインスタンスを生成
+        dailyQuestInstance = new dailyQuest(this, config, economy);
+        getCommand("dailyquest").setExecutor(dailyQuestInstance);
+        getServer().getPluginManager().registerEvents(dailyQuestInstance, this);
+        checkAndResetDailyQuest();
+
+        // PlaceholderAPIがサーバーにあるか確認
+        if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            Bukkit.getPluginManager().registerEvents(new InfoScoreBoard(), this);
+        } else {
+            getLogger().warning("PlaceholderAPIがありません! プレスホルダー系のものは有効化されません");
+        }
+    }
+
+    private boolean setupEconomy() {
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
+            return false;
+        }
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if (rsp == null) {
+            return false;
+        }
+        economy = rsp.getProvider();
+        return economy != null;
+    }
+
+    private void checkAndResetDailyQuest() {
+        String todayDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        String lastResetDate = config.getString("lastResetDate");
+
+        if (lastResetDate == null || !lastResetDate.equals(todayDate)) {
+            dailyQuestInstance.resetProgress();
+            config.set("lastResetDate", todayDate);
+            saveConfig();
+            getLogger().info("Daily quest progress has been reset.");
+        }
+    }
+
+    @Override
+    public void onDisable() {
+        saveConfig();
+    }
+
+    @EventHandler
+    public void loginBonusEV(PlayerJoinEvent event) {
+        if (getServer().getPluginManager().getPlugin("Vault") != null) {
+            loginBonus.loginBonus(event, config, economy);
+            saveConfig();
+        }
+    }
+}

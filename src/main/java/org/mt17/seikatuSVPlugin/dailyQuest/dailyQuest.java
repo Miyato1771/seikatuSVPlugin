@@ -5,6 +5,7 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,6 +15,7 @@ import org.bukkit.event.enchantment.EnchantItemEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -79,6 +81,23 @@ public class dailyQuest implements Listener, CommandExecutor {
                 break;
             default:
                 break;
+        }
+    }
+
+
+    //プレイヤーがログアウト
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        UUID playerUUID = event.getPlayer().getUniqueId();
+        savePlayerProgress(playerUUID, playerProgress.get(playerUUID));
+        plugin.saveConfig();
+    }
+
+    public void savePlayerProgress(UUID playerUUID, QuestProgress progress) {
+        if (progress != null) {
+            config.set("players." + playerUUID + ".progress", progress.getProgressMap());
+            config.set("players." + playerUUID + ".completed", progress.getCompletedMap());
+            config.set("players." + playerUUID + ".disabled", progress.getDisabledMap());
         }
     }
 
@@ -175,6 +194,49 @@ public class dailyQuest implements Listener, CommandExecutor {
         player.sendMessage("フグ: " + progress.getProgress("pufferfish") + "/1");
         player.sendMessage("熱帯魚: " + progress.getProgress("tropical_fish") + "/1");
         player.sendMessage("移動距離: " + progress.getProgress("move") + "/1000");
+    }
+
+    //config保存
+    public void saveProgress() {
+        for (Map.Entry<UUID, QuestProgress> entry : playerProgress.entrySet()) {
+            UUID playerUUID = entry.getKey();
+            QuestProgress progress = entry.getValue();
+            config.set("players." + playerUUID + ".progress", progress.getProgressMap());
+            config.set("players." + playerUUID + ".completed", progress.getCompletedMap());
+            config.set("players." + playerUUID + ".disabled", progress.getDisabledMap());
+        }
+        plugin.saveConfig();
+    }
+
+    public void loadProgress(UUID playerUUID) {
+        if (config.contains("players." + playerUUID)) {
+            ConfigurationSection progressSection = config.getConfigurationSection("players." + playerUUID + ".progress");
+            ConfigurationSection completedSection = config.getConfigurationSection("players." + playerUUID + ".completed");
+            ConfigurationSection disabledSection = config.getConfigurationSection("players." + playerUUID + ".disabled");
+
+            Map<String, Integer> progressMap = new HashMap<>();
+            Map<String, Boolean> completedMap = new HashMap<>();
+            Map<String, Boolean> disabledMap = new HashMap<>();
+
+            if (progressSection != null) {
+                for (String key : progressSection.getKeys(false)) {
+                    progressMap.put(key, progressSection.getInt(key));
+                }
+            }
+            if (completedSection != null) {
+                for (String key : completedSection.getKeys(false)) {
+                    completedMap.put(key, completedSection.getBoolean(key));
+                }
+            }
+            if (disabledSection != null) {
+                for (String key : disabledSection.getKeys(false)) {
+                    disabledMap.put(key, disabledSection.getBoolean(key));
+                }
+            }
+
+            QuestProgress progress = new QuestProgress(progressMap, completedMap, disabledMap);
+            playerProgress.put(playerUUID, progress);
+        }
     }
 
     @Override

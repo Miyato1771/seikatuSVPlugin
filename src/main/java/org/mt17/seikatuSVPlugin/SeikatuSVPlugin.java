@@ -12,6 +12,7 @@ import org.mt17.seikatuSVPlugin.dailyQuest.dailyQuest;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.UUID;
 
 public final class SeikatuSVPlugin extends JavaPlugin implements Listener {
 
@@ -73,6 +74,10 @@ public final class SeikatuSVPlugin extends JavaPlugin implements Listener {
             config.set("lastResetDate", todayDate);
             saveConfig();
             getLogger().info("Daily quest progress has been reset.");
+        } else {
+            for (String playerUUID : config.getConfigurationSection("players").getKeys(false)) {
+                dailyQuestInstance.loadProgress(UUID.fromString(playerUUID));
+            }
         }
     }
 

@@ -10,6 +10,28 @@ public class QuestProgress {
     private final Map<String, Boolean> completed = new HashMap<>();
     private final Map<String, Boolean> disabled = new HashMap<>();
 
+
+    // デフォルトコンストラクタ
+    public QuestProgress() {
+    }
+    public QuestProgress(Map<String, Integer> progress, Map<String, Boolean> completed, Map<String, Boolean> disabled) {
+        this.progress.putAll(progress);
+        this.completed.putAll(completed);
+        this.disabled.putAll(disabled);
+    }
+
+    public Map<String, Integer> getProgressMap() {
+        return new HashMap<>(progress);
+    }
+
+    public Map<String, Boolean> getCompletedMap() {
+        return new HashMap<>(completed);
+    }
+
+    public Map<String, Boolean> getDisabledMap() {
+        return new HashMap<>(disabled);
+    }
+
     public void collectItem(String item, int amount) {
         if (!isDisabled(item) && !isCompleted(item)) {
             progress.put(item, progress.getOrDefault(item, 0) + amount);

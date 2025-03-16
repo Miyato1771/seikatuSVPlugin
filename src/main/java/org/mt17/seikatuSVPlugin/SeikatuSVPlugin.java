@@ -3,6 +3,7 @@ package org.mt17.seikatuSVPlugin;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -51,6 +52,13 @@ public final class SeikatuSVPlugin extends JavaPlugin implements Listener {
         } else {
             getLogger().warning("PlaceholderAPIがありません! プレスホルダー系のものは有効化されません");
         }
+
+        // GSitがサーバーにあるか確認
+        if (Bukkit.getPluginManager().isPluginEnabled("GSit")) {
+            Bukkit.getPluginManager().registerEvents(new gsitFlyCansel(), this);
+        } else {
+            getLogger().warning("GSitがありません! GSit系のものは有効化されません");
+        }
     }
 
     private boolean setupEconomy() {
@@ -63,8 +71,9 @@ public final class SeikatuSVPlugin extends JavaPlugin implements Listener {
         }
         economy = rsp.getProvider();
         return economy != null;
-    }
 
+        // デイリークエストの進捗をリセットする
+    }
     private void checkAndResetDailyQuest() {
         String todayDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         String lastResetDate = config.getString("lastResetDate");
@@ -86,6 +95,22 @@ public final class SeikatuSVPlugin extends JavaPlugin implements Listener {
         saveConfig();
     }
 
+    // プレイヤーがログインしたときに毎日クエストを割り当てる
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        UUID playerUUID = player.getUniqueId();
+        String todayDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        String lastLoginDate = config.getString("players." + playerUUID + ".lastLoginDate");
+
+        if (lastLoginDate == null || !lastLoginDate.equals(todayDate)) {
+            dailyQuestInstance.assignDailyQuests(playerUUID);
+            config.set("players." + playerUUID + ".lastLoginDate", todayDate);
+            saveConfig();
+        }
+    }
+
+    // ログインボーナス
     @EventHandler
     public void loginBonusEV(PlayerJoinEvent event) {
         if (getServer().getPluginManager().getPlugin("Vault") != null) {
@@ -93,4 +118,6 @@ public final class SeikatuSVPlugin extends JavaPlugin implements Listener {
             saveConfig();
         }
     }
+
+
 }

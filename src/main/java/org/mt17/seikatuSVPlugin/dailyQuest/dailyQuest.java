@@ -19,15 +19,14 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class dailyQuest implements Listener, CommandExecutor {
     private final JavaPlugin plugin;
     private final FileConfiguration config;
     private final Economy economy;
     private final Map<UUID, QuestProgress> playerProgress = new HashMap<>();
+    private final List<String> questList = Arrays.asList("diamond", "iron", "gold", "redstone", "lapis", "copper", "coal", "quartz", "craft", "enchant", "cod", "salmon", "pufferfish", "tropical_fish", "move");
 
     public dailyQuest(JavaPlugin plugin, FileConfiguration config, Economy economy) {
         this.plugin = plugin;
@@ -39,12 +38,28 @@ public class dailyQuest implements Listener, CommandExecutor {
         playerProgress.clear();
     }
 
+    public void assignDailyQuests(UUID playerUUID) {
+        Collections.shuffle(questList);
+        List<String> assignedQuests = questList.subList(0, 3);
+        config.set("players." + playerUUID + ".assignedQuests", assignedQuests);
+        plugin.saveConfig();
+    }
+
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
         Material material = event.getBlock().getType();
         UUID playerUUID = player.getUniqueId();
         QuestProgress progress = playerProgress.computeIfAbsent(playerUUID, k -> new QuestProgress());
+
+        if (!isQuestAssigned(playerUUID, "diamond") && material == Material.DIAMOND_ORE) return;
+        if (!isQuestAssigned(playerUUID, "iron") && material == Material.IRON_ORE) return;
+        if (!isQuestAssigned(playerUUID, "gold") && material == Material.GOLD_ORE) return;
+        if (!isQuestAssigned(playerUUID, "redstone") && material == Material.REDSTONE_ORE) return;
+        if (!isQuestAssigned(playerUUID, "lapis") && material == Material.LAPIS_ORE) return;
+        if (!isQuestAssigned(playerUUID, "copper") && material == Material.COPPER_ORE) return;
+        if (!isQuestAssigned(playerUUID, "coal") && material == Material.COAL_ORE) return;
+        if (!isQuestAssigned(playerUUID, "quartz") && material == Material.NETHER_QUARTZ_ORE) return;
 
         switch (material) {
             case DIAMOND_ORE:
@@ -84,8 +99,6 @@ public class dailyQuest implements Listener, CommandExecutor {
         }
     }
 
-
-    //プレイヤーがログアウト
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID playerUUID = event.getPlayer().getUniqueId();
@@ -107,6 +120,8 @@ public class dailyQuest implements Listener, CommandExecutor {
         UUID playerUUID = player.getUniqueId();
         QuestProgress progress = playerProgress.computeIfAbsent(playerUUID, k -> new QuestProgress());
 
+        if (!isQuestAssigned(playerUUID, "craft")) return;
+
         progress.craftItem(event.getRecipe().getResult().getType(), 1);
 
         checkAndReward(player, progress, "craft");
@@ -118,6 +133,8 @@ public class dailyQuest implements Listener, CommandExecutor {
         UUID playerUUID = player.getUniqueId();
         QuestProgress progress = playerProgress.computeIfAbsent(playerUUID, k -> new QuestProgress());
 
+        if (!isQuestAssigned(playerUUID, "enchant")) return;
+
         progress.enchantItem(1);
 
         checkAndReward(player, progress, "enchant");
@@ -128,6 +145,8 @@ public class dailyQuest implements Listener, CommandExecutor {
         Player player = event.getPlayer();
         UUID playerUUID = player.getUniqueId();
         QuestProgress progress = playerProgress.computeIfAbsent(playerUUID, k -> new QuestProgress());
+
+        if (!isQuestAssigned(playerUUID, "fish")) return;
 
         switch (event.getCaught().getType()) {
             case COD:
@@ -156,6 +175,8 @@ public class dailyQuest implements Listener, CommandExecutor {
         Player player = event.getPlayer();
         UUID playerUUID = player.getUniqueId();
         QuestProgress progress = playerProgress.computeIfAbsent(playerUUID, k -> new QuestProgress());
+
+        if (!isQuestAssigned(playerUUID, "move")) return;
 
         progress.move(1);
 
@@ -196,7 +217,6 @@ public class dailyQuest implements Listener, CommandExecutor {
         player.sendMessage("移動距離: " + progress.getProgress("move") + "/1000");
     }
 
-    //config保存
     public void saveProgress() {
         for (Map.Entry<UUID, QuestProgress> entry : playerProgress.entrySet()) {
             UUID playerUUID = entry.getKey();
@@ -207,6 +227,8 @@ public class dailyQuest implements Listener, CommandExecutor {
         }
         plugin.saveConfig();
     }
+
+
 
     public void loadProgress(UUID playerUUID) {
         if (config.contains("players." + playerUUID)) {
@@ -239,13 +261,38 @@ public class dailyQuest implements Listener, CommandExecutor {
         }
     }
 
+    private boolean isQuestAssigned(UUID playerUUID, String questPart) {
+        List<String> assignedQuests = config.getStringList("players." + playerUUID + ".assignedQuests");
+        return assignedQuests.stream().anyMatch(quest -> quest.equalsIgnoreCase(questPart));
+    }
+
+    public void showAssignedQuests(Player player) {
+        UUID playerUUID = player.getUniqueId();
+        List<String> assignedQuests = config.getStringList("players." + playerUUID + ".assignedQuests");
+        if (assignedQuests == null || assignedQuests.isEmpty()) {
+            player.sendMessage("クエストがありません.");
+        } else {
+            player.sendMessage("クエスト一覧:");
+            for (String quest : assignedQuests) {
+                player.sendMessage("- " + quest);
+            }
+        }
+    }
+
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (sender instanceof Player) {
             Player player = (Player) sender;
-            if (args.length > 0 && args[0].equalsIgnoreCase("progress")) {
-                showProgress(player);
-                return true;
+            if (args.length > 0) {
+                if (args[0].equalsIgnoreCase("progress")) {
+                    showProgress(player);
+                    return true;
+                } else if (args[0].equalsIgnoreCase("show")) {
+                    showAssignedQuests(player);
+                    return true;
+                }
+            } else {
+                player.sendMessage("Please provide a valid argument.");
             }
         }
         return false;

@@ -2,6 +2,7 @@ name: seikatuSVPlugin
 version: '1.0-SNAPSHOT'
 main: org.mt17.seikatuSVPlugin.SeikatuSVPlugin
 api-version: '1.21'
+depend: [GSit]  # GSit に依存することを明記
 dependencies:
   server:
     PlaceholderAPI:

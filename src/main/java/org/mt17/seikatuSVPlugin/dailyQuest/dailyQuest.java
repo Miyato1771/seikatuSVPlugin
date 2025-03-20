@@ -269,12 +269,105 @@ public class dailyQuest implements Listener, CommandExecutor {
     public void showAssignedQuests(Player player) {
         UUID playerUUID = player.getUniqueId();
         List<String> assignedQuests = config.getStringList("players." + playerUUID + ".assignedQuests");
+        QuestProgress progress = playerProgress.get(playerUUID);
         if (assignedQuests == null || assignedQuests.isEmpty()) {
             player.sendMessage("クエストがありません.");
         } else {
             player.sendMessage("クエスト一覧:");
             for (String quest : assignedQuests) {
-                player.sendMessage("- " + quest);
+                // クエストの進捗を表示
+                switch (quest) {
+                    case "diamond":
+                        if(progress.getProgress("diamond") == 1) {
+                            break;
+                        }
+                        player.sendMessage("- ダイヤモンド: 1個");
+                        break;
+                    case "iron":
+                        if(progress.getProgress("iron") == 32) {
+                            break;
+                        }
+                        player.sendMessage("- 鉄: 32個");
+                        break;
+                    case "gold":
+                        if(progress.getProgress("gold") == 32) {
+                            break;
+                        }
+                        player.sendMessage("- 金: 32個");
+                        break;
+                    case "redstone":
+                        if(progress.getProgress("redstone") == 64) {
+                            break;
+                        }
+                        player.sendMessage("- レッドストーン: 64個");
+                        break;
+                    case "lapis":
+                        if(progress.getProgress("lapis") == 64) {
+                            break;
+                        }
+                        player.sendMessage("- ラピスラズリ: 64個");
+                        break;
+                    case "copper":
+                        if(progress.getProgress("copper") == 64) {
+                            break;
+                        }
+                        player.sendMessage("- 銅: 64個");
+                        break;
+                    case "coal":
+                        if(progress.getProgress("coal") == 64) {
+                            break;
+                        }
+                        player.sendMessage("- 石炭: 64個");
+                        break;
+                    case "quartz":
+                        if(progress.getProgress("quartz") == 64) {
+                            break;
+                        }
+                        player.sendMessage("- クオーツ: 64個");
+                        break;
+                    case "craft":
+                        if(progress.getProgress("craft") == 100) {
+                            break;
+                        }
+                        player.sendMessage("- クラフト: 100回");
+                        break;
+                    case "enchant":
+                        if(progress.getProgress("enchant") == 3) {
+                            break;
+                        }
+                        player.sendMessage("- エンチャント: 3回");
+                        break;
+                    case "cod":
+                        if(progress.getProgress("cod") == 16) {
+                            break;
+                        }
+                        player.sendMessage("- 生鱈: 16匹");
+                        break;
+                    case "salmon":
+                        if(progress.getProgress("salmon") == 16) {
+                            break;
+                        }
+                        player.sendMessage("- 生鮭: 16匹");
+                        break;
+                    case "pufferfish":
+                        if(progress.getProgress("pufferfish") == 1) {
+                            break;
+                        }
+                        player.sendMessage("- フグ: 1匹");
+                        break;
+                    case "tropical_fish":
+                        if (progress.getProgress("tropical_fish") == 1) {
+                            break;
+                        }
+                        player.sendMessage("- 熱帯魚: 1匹");
+                        break;
+                    case "move":
+                        if(progress.getProgress("move") == 1000) {
+                            break;
+                        }
+                        player.sendMessage("- 移動距離: 1000ブロック");
+                        break;
+                }
             }
         }
     }

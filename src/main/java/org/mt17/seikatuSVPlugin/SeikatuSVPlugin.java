@@ -108,6 +108,8 @@ public final class SeikatuSVPlugin extends JavaPlugin implements Listener {
             config.set("players." + playerUUID + ".lastLoginDate", todayDate);
             saveConfig();
         }
+        // ログイン時にデイリークエストを表示
+        dailyQuestInstance.showAssignedQuests(player);
     }
 
     // ログインボーナス
